@@ -4,14 +4,14 @@ import { Menu, X } from 'lucide-react';
 import { ClippedLink } from './ui/design-system';
 import { CALENDLY_URL } from '@/lib/site';
 import type { PageName, SetPage } from '@/lib/navigation';
-import archLogo from '@/assets/arch-only-small.png';
+import smartTekLogo from '@/assets/smartteklabs.png';
 
 interface NavbarProps {
   activePage: PageName;
   setPage: SetPage;
 }
 
-type NavLink = { label: string; page: 'home' | 'events'; sectionId?: string };
+type NavLink = { label: string; page: PageName; sectionId?: string };
 
 const navLinks: NavLink[] = [
   { label: 'Home', page: 'home' },
@@ -34,7 +34,7 @@ export function Navbar({ activePage, setPage }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleNavClick = (page: 'home' | 'events', sectionId?: string) => {
+  const handleNavClick = (page: PageName, sectionId?: string) => {
     setMobileMenuOpen(false);
     setPage(page, sectionId);
   };
@@ -59,19 +59,14 @@ export function Navbar({ activePage, setPage }: NavbarProps) {
           className="flex items-center gap-3 cursor-pointer group" 
           onClick={() => handleNavClick('home')}
         >
-          <img src={archLogo} alt="Smart Tek Labs Arch" className="h-8 w-auto group-hover:scale-105 transition-transform" />
-          <div className="flex items-center">
-            <span className="font-logo font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-              SmartTek
-            </span>
-            <div className="ml-2 bg-accent text-accent-foreground text-[10px] font-bold px-1.5 py-0.5 clip-button tracking-wider">
-              LABS
-            </div>
-          </div>
+          <img src={smartTekLogo} alt="SmartTek Labs — Smart solutions. Powered by A.I." className="h-10 md:h-12 w-auto group-hover:scale-105 transition-transform" />
         </div>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        {/* lg, not md: six links plus the CTA need ~795px, so at the md
+            breakpoint (768px) the row overflowed — "Event Experiences" wrapped
+            to two lines and the button ran off the right edge. */}
+        <nav className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => (
             <button
               key={link.label}
@@ -98,7 +93,7 @@ export function Navbar({ activePage, setPage }: NavbarProps) {
 
         {/* Mobile Menu Toggle */}
         <button 
-          className="md:hidden text-white p-2" 
+          className="lg:hidden text-white p-2" 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -107,7 +102,7 @@ export function Navbar({ activePage, setPage }: NavbarProps) {
 
       {/* Mobile Nav */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-background border-b border-border py-4 px-6 flex flex-col gap-4 shadow-xl">
+        <div className="lg:hidden absolute top-full left-0 w-full bg-background border-b border-border py-4 px-6 flex flex-col gap-4 shadow-xl">
           {navLinks.map((link) => (
             <button
               key={link.label}

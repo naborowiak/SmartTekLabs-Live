@@ -1,6 +1,157 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
+/* ------------------------------------------------------------------ *
+ * Device frames
+ *
+ * Drawn in CSS rather than composited into stock device photos: they stay
+ * crisp at any size, inherit the dark theme, cost nothing to ship, and can't
+ * date the way a photo of a 2019 laptop does. Screenshots go inside them.
+ * ------------------------------------------------------------------ */
+
+/**
+ * A laptop lid + base. Screen is 16:10 — feed it a capture taken at 16:10
+ * (e.g. 1440×900) and `fit="cover"` fills it edge to edge with no crop.
+ *
+ * `fit="contain"` is the honest fallback for art that isn't 16:10 (a 16:9 slide,
+ * a very wide app screenshot). Cover would silently crop the sides — which on
+ * the Affton scoreboard means losing the TOTAL/PLACE columns, i.e. the part that
+ * proves the thing tallies itself.
+ */
+export function LaptopFrame({
+  src,
+  alt,
+  className,
+  objectPosition = "top",
+  fit = "cover",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  objectPosition?: "top" | "center";
+  fit?: "cover" | "contain";
+}) {
+  return (
+    <div className={cn("relative", className)}>
+      {/* Lid */}
+      <div className="rounded-t-xl border-x border-t border-slate-700/80 bg-[#161b28] p-2.5 pb-2 shadow-2xl">
+        <div className="mb-2 flex justify-center">
+          <span className="h-1 w-1 rounded-full bg-slate-600" aria-hidden="true" />
+        </div>
+        <div className="relative aspect-[16/10] overflow-hidden rounded-sm bg-black">
+          <img
+            src={src}
+            alt={alt}
+            loading="lazy"
+            className={cn(
+              "absolute inset-0 h-full w-full",
+              fit === "cover" ? "object-cover" : "object-contain",
+              objectPosition === "top" && fit === "cover" ? "object-top" : "object-center",
+            )}
+          />
+        </div>
+      </div>
+      {/* Base — slightly wider than the lid, with a hinge notch */}
+      <div className="relative -mx-[3%] h-3 rounded-b-lg bg-gradient-to-b from-[#2b3242] to-[#11141d] shadow-lg">
+        <div className="absolute left-1/2 top-0 h-1 w-14 -translate-x-1/2 rounded-b-md bg-[#0b0e15]" />
+      </div>
+    </div>
+  );
+}
+
+/** A phone. Screen is 9:19.5 — feed it a real mobile-width capture, not a squeezed desktop one. */
+export function PhoneFrame({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "relative rounded-[1.8rem] border border-slate-700/80 bg-[#11141d] p-1.5 shadow-2xl",
+        className,
+      )}
+    >
+      <div className="relative aspect-[9/19.5] overflow-hidden rounded-[1.5rem] bg-black">
+        <img src={src} alt={alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" />
+        {/* Notch */}
+        <div className="absolute left-1/2 top-1.5 h-4 w-16 -translate-x-1/2 rounded-full bg-black" aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A plain screen frame that adopts the artwork's own aspect ratio.
+ *
+ * For art that isn't 16:10 — a 16:9 slide deck, the 2.19:1 scoreboard, print
+ * pieces. Forcing those into LaptopFrame means either cropping away the content
+ * that makes the point, or `fit="contain"` letterboxing them inside black bars
+ * that read as broken. Passing the real pixel dimensions lets the browser
+ * reserve the box before the image loads, so nothing reflows underneath it.
+ */
+export function ScreenFrame({
+  src,
+  alt,
+  w,
+  h,
+  className,
+}: {
+  src: string;
+  alt: string;
+  w: number;
+  h: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-slate-700/80 bg-[#11141d] shadow-2xl",
+        className,
+      )}
+    >
+      <img src={src} alt={alt} width={w} height={h} loading="lazy" className="block h-auto w-full" />
+    </div>
+  );
+}
+
+/**
+ * Laptop with a phone overlapping its corner — the same page at two real
+ * breakpoints, side by side. The phone is optional: without a genuine
+ * mobile-width capture it's omitted rather than faked by squeezing a desktop
+ * screenshot into a phone-shaped hole, which fools nobody and looks it.
+ *
+ * Both the laptop's reserved margin and the phone's width are percentages of
+ * this wrapper, so the pair scales as one unit and the phone stays pinned to
+ * the laptop's corner at every width. Anything absolute here (a fixed phone
+ * width, or anchoring the phone to a wider container than the laptop) detaches
+ * the two as the viewport grows.
+ */
+export function DeviceShowcase({
+  desktop,
+  desktopAlt,
+  desktopFit = "cover",
+  mobile,
+  mobileAlt,
+  className,
+}: {
+  desktop: string;
+  desktopAlt: string;
+  desktopFit?: "cover" | "contain";
+  mobile?: string;
+  mobileAlt?: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn("relative", className)}>
+      <LaptopFrame src={desktop} alt={desktopAlt} fit={desktopFit} className={mobile ? "mr-[12%] sm:mr-[14%]" : ""} />
+      {mobile && (
+        <PhoneFrame
+          src={mobile}
+          alt={mobileAlt ?? ""}
+          className="absolute -bottom-4 right-0 w-[22%] min-w-[74px] max-w-[130px]"
+        />
+      )}
+    </div>
+  );
+}
+
 // Button with the clipped corners style
 type ClippedVariant = "gold" | "ghost" | "cyan";
 
@@ -111,7 +262,7 @@ export function Section({
     <section
       id={id}
       className={cn(
-        "relative overflow-hidden py-24 md:py-32 lg:py-36",
+        "relative overflow-hidden py-16 md:py-24 lg:py-28",
         surface === "raised" ? "bg-card" : "bg-background",
         bordered && "border-t border-border",
         className,
@@ -261,70 +412,4 @@ export function Stat({ value, label, tone = "cyan" }: { value: string; label: st
 /** Soft radial glow positioned behind section content. */
 export function Glow({ className }: { className?: string }) {
   return <div className={cn("pointer-events-none absolute rounded-full blur-[130px]", className)} />;
-}
-
-/* ------------------------------------------------------------------ *
- * Device frames — show captured screenshots in their real aspect
- * ratios (1440×900 laptop, 390×844 phone) so nothing gets cropped.
- * ------------------------------------------------------------------ */
-
-type Fit = "cover" | "contain";
-
-/** A single laptop-style screen frame. */
-export function LaptopFrame({ src, alt, fit = "cover" }: { src: string; alt: string; fit?: Fit }) {
-  return (
-    <div className="mx-auto w-full max-w-2xl">
-      <div className="overflow-hidden rounded-xl border border-border bg-[#0b0f1a] shadow-[0_24px_60px_-18px_rgba(0,0,0,0.7)]">
-        <div className="flex items-center gap-1.5 border-b border-border bg-card px-4 py-2.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
-        </div>
-        <div className="aspect-[1440/900] w-full bg-[#0b0f1a]">
-          <img
-            src={src}
-            alt={alt}
-            loading="lazy"
-            className={cn("h-full w-full object-top", fit === "cover" ? "object-cover" : "object-contain")}
-          />
-        </div>
-      </div>
-      <div className="mx-auto h-2 w-2/3 rounded-b-xl border border-t-0 border-border bg-card" />
-    </div>
-  );
-}
-
-/** A phone-style screen frame in its true portrait aspect. */
-function PhoneFrame({ src, alt }: { src: string; alt: string }) {
-  return (
-    <div className="overflow-hidden rounded-[1.75rem] border-4 border-[#0b0f1a] bg-[#0b0f1a] shadow-[0_24px_60px_-18px_rgba(0,0,0,0.8)] ring-1 ring-border">
-      <div className="aspect-[390/844] w-full">
-        <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover object-top" />
-      </div>
-    </div>
-  );
-}
-
-/** Laptop with an overlapping phone — for sites we captured on both. */
-export function DeviceShowcase({
-  desktop,
-  desktopAlt,
-  desktopFit = "cover",
-  mobile,
-  mobileAlt,
-}: {
-  desktop: string;
-  desktopAlt: string;
-  desktopFit?: Fit;
-  mobile: string;
-  mobileAlt: string;
-}) {
-  return (
-    <div className="relative pb-10 pr-10 sm:pb-0 sm:pr-16">
-      <LaptopFrame src={desktop} alt={desktopAlt} fit={desktopFit} />
-      <div className="absolute bottom-0 right-0 w-28 sm:w-32 md:w-36">
-        <PhoneFrame src={mobile} alt={mobileAlt ?? desktopAlt} />
-      </div>
-    </div>
-  );
 }

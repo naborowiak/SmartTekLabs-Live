@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
@@ -6,16 +6,32 @@ import { Events } from './pages/Events';
 import { CaseStudyPage } from './pages/CaseStudyPage';
 import type { PageName, SetPage } from './lib/navigation';
 
+function parseHash(): { page: PageName; slug?: string } {
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  const [page, slug] = hash.split('/');
+  if (page === 'case-study' && slug) return { page: 'case-study', slug };
+  if (page === 'events') return { page: 'events' };
+  return { page: 'home' };
+}
+
 function App() {
-  const [route, setRoute] = useState<{ page: PageName; slug?: string }>({ page: 'home' });
+  const [route, setRoute] = useState<{ page: PageName; slug?: string }>(parseHash);
+
+  useEffect(() => {
+    const onHashChange = () => setRoute(parseHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   const setPage: SetPage = (page, arg) => {
     if (page === 'case-study') {
+      window.location.hash = `/case-study/${arg}`;
       setRoute({ page, slug: arg });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
+    window.location.hash = page === 'home' ? '/' : `/${page}`;
     setRoute({ page });
 
     if (arg) {

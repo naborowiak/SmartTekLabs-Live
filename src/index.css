@@ -171,3 +171,20 @@
 .clip-button {
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
+
+/* Auto-scrolling "app demo" — a tall full-page capture panned through its device
+   frame on a slow loop, so a static screenshot reads like a walkthrough. The frame
+   is a fixed aspect and the image is object-cover, so animating object-position pans
+   the whole page with no JS measurement. It runs one direction — top to bottom —
+   holding briefly at each end, then cuts back to the top (no reverse up-scroll). */
+@keyframes appPan {
+  0%,  8%  { object-position: 50% 0%; }
+  92%, 100% { object-position: 50% 100%; }
+}
+.app-pan {
+  object-position: 50% 0%;
+  animation: appPan 26s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-pan { animation: none; object-position: 50% 0%; }
+}
